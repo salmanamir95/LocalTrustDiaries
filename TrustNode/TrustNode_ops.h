@@ -1,6 +1,6 @@
 #ifndef TRUST_NODE_H
 
-#include "LocalTrustDiaries/TrustNode.h"
+#include "protocol/trust/TrustNode.h"
 
 #define TRUST_NODE_H
 
