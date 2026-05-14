@@ -1,5 +1,6 @@
 #include "LTDAdapter.h"
 #include "runtime/tasksystem.h"
+#include "core/input.h"
 #include "protocol/trust/TrustNode_ops.h"
 
 // =================================================
