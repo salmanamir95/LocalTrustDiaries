@@ -1,46 +1,135 @@
-#include "adapters/LTDAdapter.h"
-
+#include "LTDAdapter.h"
 #include "runtime/tasksystem.h"
-#include "runtime/taskhandle.h"
+#include "protocol/trust/TrustNode_ops.h"
 
-#include "protocol/trust/TrustNode.h"
-#include "protocol/trust/TrustNodeOps.h"
+// =================================================
+// NODE BINDING
+// =================================================
 
-#include <iostream>
-
-LTDAdapter::LTDAdapter(TaskSystem* system)
-    : system(system) {}
-
-void LTDAdapter::init() {
-    processedNodes = 0;
-    std::cout << "[LTDAdapter] init\n";
+void LTDAdapter::bindNode(TrustNode* n)
+{
+    node = n;
 }
 
-void LTDAdapter::tick() {
-    // telemetry only (NO task interaction)
-    std::cout << "[LTDAdapter] telemetry tick\n";
-}
+// =================================================
+// ASYNC GETTERS
+// =================================================
 
-TaskHandle LTDAdapter::submitTask(std::any input) {
-
-    return system->submit(
-        std::move(input),
-        [](std::any in) -> std::any {
-
-            TrustNode* node = std::any_cast<TrustNode*>(in);
-
-            if (node) {
-                trust_node_set_trust(node, 100);
-            }
-
-            return node;
+TaskHandle LTDAdapter::getAckCount()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            return trust_node_get_acks(node);
         }
     );
 }
 
-void LTDAdapter::updateTrustNode(TrustNode* node, uint8_t ackType) {
-    if (!node) return;
+TaskHandle LTDAdapter::getNackCount()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            return trust_node_get_nacks(node);
+        }
+    );
+}
 
-    trust_node_update_trust(node, ackType);
-    processedNodes++;
+TaskHandle LTDAdapter::getTrust()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            return trust_node_get_trust(node);
+        }
+    );
+}
+
+TaskHandle LTDAdapter::getP()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            return trust_node_get_p(node);
+        }
+    );
+}
+
+TaskHandle LTDAdapter::getS()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            return trust_node_get_s(node);
+        }
+    );
+}
+
+// =================================================
+// ASYNC SETTERS
+// =================================================
+
+TaskHandle LTDAdapter::setTrust(uint32_t value)
+{
+    return taskSystem->submit(
+        Input<uint32_t>{value},
+        [this](Input<uint32_t> in) {
+            trust_node_set_trust(node, in.get());
+        }
+    );
+}
+
+TaskHandle LTDAdapter::setP(uint32_t value)
+{
+    return taskSystem->submit(
+        Input<uint32_t>{value},
+        [this](Input<uint32_t> in) {
+            trust_node_set_p(node, in.get());
+        }
+    );
+}
+
+TaskHandle LTDAdapter::setS(uint32_t value)
+{
+    return taskSystem->submit(
+        Input<uint32_t>{value},
+        [this](Input<uint32_t> in) {
+            trust_node_set_s(node, in.get());
+        }
+    );
+}
+
+// =================================================
+// ASYNC EVENTS
+// =================================================
+
+TaskHandle LTDAdapter::incrementAck()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            trust_node_increment_ack(node);
+        }
+    );
+}
+
+TaskHandle LTDAdapter::incrementNack()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            trust_node_increment_nack(node);
+        }
+    );
+}
+
+TaskHandle LTDAdapter::updateTrust()
+{
+    return taskSystem->submit(
+        Input<NoInput>{},
+        [this](Input<NoInput>) {
+            trust_node_update_trust_bayes(node);
+            return trust_node_get_trust(node);
+        }
+    );
 }
